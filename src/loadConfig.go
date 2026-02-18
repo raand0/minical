@@ -6,13 +6,22 @@ import (
 	"path/filepath"
 )
 
-var Colors struct{
+var configs struct{
 	headerText string
 	headerBox string
 	currentDay string
 	passedDays string
 	regularDays string
 	weekDaysName string
+	currentDaySymbol string
+	emptyCellSymbol string
+	headerBoxWidth int
+	headerBorderX string
+	headerBorderY string
+	headerBorderCLB string
+	headerBorderCLU string
+	headerBorderCRB string
+	headerBorderCRU string
 }
 
 var userConfigDir string = getUserConfigDir()
@@ -74,6 +83,15 @@ currentDay = 112, 255, 200
 passedDays = 140, 140, 140
 regularDays = 255, 255, 255
 weekDaysName = 104, 66, 179
+currentDaySymbol = ◆
+emptyCellSymbol = ·
+headerBoxWidth = 38
+headerBorderX = ─
+headerBorderY = │
+headerBorderCLB = ╰
+headerBorderCLU = ╭
+headerBorderCRB = ╯
+headerBorderCRU = ╮
 	`);
 
 	return text;
