@@ -1,44 +1,54 @@
 package main
 
 import (
-	"strings"
-	"strconv"
 	"fmt"
+	"strings"
 	"time"
+
 	"github.com/gdamore/tcell/v2"
 )
 
-func renderHeader(s tcell.Screen, x,y int, month string, year int) {
+var weekDays [7]string = [7]string{"su", "mo", "tu", "we", "th", "fr", "sa"}
 
-	var r,g,b int32
-	var r2,g2,b2 int32
-	
-	//convert string rgb to int
-	_, err := fmt.Sscanf(configs.headerBox, "%d, %d, %d", &r,&g,&b) 
-	if(err != nil){
-		fmt.Print(err)
+var calendarCache struct {
+	month  time.Month
+	year   int
+	grid   [6][7]int
+	valid  bool
+}
+
+func getCachedCalendar(month time.Month, year int) [6][7]int {
+	if calendarCache.valid && calendarCache.month == month && calendarCache.year == year {
+		return calendarCache.grid
 	}
+	calendarCache.grid = populateCalender(month, year)
+	calendarCache.month = month
+	calendarCache.year = year
+	calendarCache.valid = true
+	return calendarCache.grid
+}
 
-	_, err = fmt.Sscanf(configs.headerText, "%d,%d,%d", &r2,&g2,&b2)
-	if(err != nil){
-		fmt.Print(err)
-	}
-	
-	title := month + " " + strconv.Itoa(year)
+func render(s tcell.Screen, today time.Time, viewMonth time.Month, viewYear int) {
+	w, _ := s.Size()
+	xCal := (w / 2) - (calendarWidth / 2)
+	xHeader := (w / 2) - (configs.headerBoxWidth / 2)
+	xFooter := (w / 2) - (footerWidth / 2)
 
+	renderHeader(s, xHeader, headerY, viewMonth.String(), viewYear)
+	renderCalendar(s, xCal, calendarY, today, viewMonth, viewYear)
+	renderFooter(s, xFooter, footerY)
+	s.Show()
+}
+
+func renderHeader(s tcell.Screen, x, y int, month string, year int) {
+	borderStyle := tcell.StyleDefault.Foreground(configs.headerBoxColor)
+	titleStyle := tcell.StyleDefault.Foreground(configs.headerTextColor)
+
+	title := fmt.Sprintf("%s %d", month, year)
 	width := configs.headerBoxWidth
 	titleLen := len(title)
-
 	leftPadding := (width - titleLen) / 2
 	rightPadding := (width - titleLen) - leftPadding
-
-	borderStyle := tcell.StyleDefault.Foreground(
-		tcell.NewRGBColor(r, g, b),
-	)
-
-	titleStyle := tcell.StyleDefault.Foreground(
-		tcell.NewRGBColor(r2, g2, b2),
-	)
 
 	drawText(s, x, y, borderStyle,
 		fmt.Sprintf("%s%s%s", configs.headerBorderCLU, strings.Repeat(configs.headerBorderX, width), configs.headerBorderCRU))
@@ -53,95 +63,79 @@ func renderHeader(s tcell.Screen, x,y int, month string, year int) {
 
 	drawText(s, x, y+2, borderStyle,
 		fmt.Sprintf("%s%s%s", configs.headerBorderCLB, strings.Repeat(configs.headerBorderX, width), configs.headerBorderCRB))
-
 }
 
-func renderCalendar(s tcell.Screen, x,y int, currentDay int, currentMonth time.Month, currentYear int){
-
-	var r,g,b int32
-	var r2,g2,b2 int32
-	var r3,g3,b3 int32
-	var r4,g4,b4 int32
-
-	_, err := fmt.Sscanf(configs.passedDays, "%d, %d, %d", &r,&g,&b) 
-	if(err != nil){
-		fmt.Print(err)
+func renderFooter(s tcell.Screen, x, y int) {
+	if !configs.showFooter {
+		return
 	}
-	_, err = fmt.Sscanf(configs.regularDays, "%d, %d, %d", &r2,&g2,&b2) 
-	if(err != nil){
-		fmt.Print(err)
-	}
-	_, err = fmt.Sscanf(configs.currentDay, "%d, %d, %d", &r3,&g3,&b3) 
-	if(err != nil){
-		fmt.Print(err)
-	}
-	_, err = fmt.Sscanf(configs.weekDaysName, "%d, %d, %d", &r4,&g4,&b4) 
-	if(err != nil){
-		fmt.Print(err)
-	}
+	footerStyle := tcell.StyleDefault.Foreground(configs.footerColorParsed)
+	drawText(s, x, y, footerStyle, "[] • month   () • year   t • today   q • quit")
+}
 
-	weekDays := []string{"su", "mo", "tu", "we", "th", "fr", "sa"};
+func populateCalender(currentMonth time.Month, currentYear int) [6][7]int {
+	daysCount := time.Date(currentYear, currentMonth+1, 0, 0, 0, 0, 0, time.Local).Day()
+	firstWeekday := int(time.Date(currentYear, currentMonth, 1, 0, 0, 0, 0, time.Local).Weekday())
 
-	daysCount := time.Date(currentYear, currentMonth+1, 0, 0,0,0,0, time.Local).Day(); //number of days in current month
-	firstWeekday := int(time.Date(currentYear, currentMonth, 1,0,0,0,0, time.Local).Weekday()) //first weekday of the month
+	var result [6][7]int
+	row, col, day := 0, firstWeekday, 1
 
-	var calendar [6][7]int
-
-	row := 0;
-	col := firstWeekday;
-	day := 1;
-
-	outer:
+outer:
 	for row < 6 {
-		for col < 7{
-			if( day <= daysCount){
-				calendar[row][col] = day;
-				day++;
-				col++;
-
-				if(col == 7){
-					col = 0;
-					row++;
+		for col < 7 {
+			if day <= daysCount {
+				result[row][col] = day
+				day++
+				col++
+				if col == 7 {
+					col = 0
+					row++
 				}
-			}else{
-				break outer;
+			} else {
+				break outer
 			}
 		}
 	}
+	return result
+}
 
-	passedDaysStyle := tcell.StyleDefault.Foreground(tcell.NewRGBColor(r,g,b))
-	regularDaysStyle := tcell.StyleDefault.Foreground(tcell.NewRGBColor(r2,g2,b2))
-	currentDayStyle := tcell.StyleDefault.Foreground(tcell.NewRGBColor(r3,g3,b3))
-	weekDaysStyle := tcell.StyleDefault.Foreground(tcell.NewRGBColor(r4,g4,b4))
+func renderCalendar(s tcell.Screen, x, y int, today time.Time, viewMonth time.Month, viewYear int) {
+	weekDaysStyle := tcell.StyleDefault.Foreground(configs.weekDaysNameColor)
+
+	highlightDay := 0
+	if viewYear == today.Year() && viewMonth == today.Month() {
+		highlightDay = today.Day()
+	}
+
+	currentDayStyle := tcell.StyleDefault.Foreground(configs.currentDayColor)
+	passedDaysStyle := tcell.StyleDefault.Foreground(configs.passedDaysColor)
+	regularDaysStyle := tcell.StyleDefault.Foreground(configs.regularDaysColor)
+
+	calendar := getCachedCalendar(viewMonth, viewYear)
+
 	originalX := x
-	for _,d := range weekDays{
-		drawText(s, x,y, weekDaysStyle, d+"     ")
-		drawText(s, x,y+1, weekDaysStyle, "──   ")
+	for _, d := range weekDays {
+		drawText(s, x, y, weekDaysStyle, d+"     ")
+		drawText(s, x, y+1, weekDaysStyle, "──   ")
 		x += 7
 	}
-	y += 2;
+	y += 2
 	x = originalX
 
-	for i:=0; i<6; i++{
-		for j:=0; j<7; j++{
-			display := calendar[i][j];
-			if(display == 0){
-				drawText(s, x,y, regularDaysStyle, configs.emptyCellSymbol + "      ")
-				x += 7;
-			}else{
-				if(display == currentDay){
-					drawText(s, x,y, currentDayStyle, fmt.Sprintf("%2d%s    ", display, configs.currentDaySymbol))
-					x += 7;
-				}else{
-					if(display < currentDay){
-						drawText(s, x,y, passedDaysStyle, fmt.Sprintf("%2d     ", display))
-						x += 7
-						continue
-					}
-					drawText(s, x,y, regularDaysStyle, fmt.Sprintf("%2d     ", display))
-					x += 7;
-				}
+	for i := 0; i < 6; i++ {
+		for j := 0; j < 7; j++ {
+			d := calendar[i][j]
+			if d == 0 {
+				drawText(s, x, y, regularDaysStyle, configs.emptyCellSymbol+"      ")
+			} else if d == highlightDay {
+				drawText(s, x, y, currentDayStyle, fmt.Sprintf("%2d%s    ", d, configs.currentDaySymbol))
+			} else if highlightDay > 0 && d < highlightDay {
+				// Only colour as "passed" when we're viewing the current month
+				drawText(s, x, y, passedDaysStyle, fmt.Sprintf("%2d     ", d))
+			} else {
+				drawText(s, x, y, regularDaysStyle, fmt.Sprintf("%2d     ", d))
 			}
+			x += 7
 		}
 		y += 2
 		x = originalX

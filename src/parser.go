@@ -41,6 +41,8 @@ func parse(file *os.File){
 			case "headerBorderCLU": configs.headerBorderCLU = value
 			case "headerBorderCRB": configs.headerBorderCRB = value
 			case "headerBorderCRU": configs.headerBorderCRU = value
+			case "showFooter": configs.showFooter, _ = strconv.ParseBool(value)
+			case "footerColor": configs.footerColor = value
 		}
 	}
 

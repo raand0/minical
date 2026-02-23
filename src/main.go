@@ -4,71 +4,95 @@ import (
 	"log"
 	"time"
 	"github.com/gdamore/tcell/v2"
-);
+)
 
-
-func main(){
-	//to do: 
-	//convert program to TUI using tcell
+func main() {
+	//to do
+	//create commands functionality
+	//make a gui version
+	//create a cool default style
 
 	ConfExist()
-
 	iniTerminal()
-
 }
 
+func iniTerminal() {
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
 
-func iniTerminal(){
+	viewMonth := today.Month()
+	viewYear := today.Year()
 
-	currentDay := time.Now().Day(); //current Day
-	currentMonth := time.Now().Month(); //current Month
-	currentYear := time.Now().Year(); //current Year
-
-	s, err := tcell.NewScreen();
-	if(err != nil){
+	s, err := tcell.NewScreen()
+	if err != nil {
 		log.Fatal(err)
 	}
-
-	err = s.Init();
-	if(err != nil){
+	if err = s.Init(); err != nil {
 		log.Fatal(err)
 	}
 	defer s.Fini()
 
-	style := tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset)
-	s.SetStyle(style)
+	s.SetStyle(tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset))
 
-	w,_ := s.Size()
-	renderHeader(s, (w/2)-(configs.headerBoxWidth/2),3, currentMonth.String(), currentYear)
-	renderCalendar(s, (w/2)-(45/2),7, currentDay, currentMonth, currentYear)
-	s.Show()
+	render(s, today, viewMonth, viewYear)
 
 	for {
 		ev := s.PollEvent()
 
 		switch e := ev.(type) {
-			case *tcell.EventKey:
-			if e.Key() == tcell.KeyEscape || e.Rune() == 'q' {
-					return
+		case *tcell.EventKey:
+			prevMonth := viewMonth
+			prevYear := viewYear
+
+			switch e.Rune() {
+			case 'q', 'Q':
+				return
+			case '[':
+				if viewMonth == time.January {
+					viewMonth = time.December
+					viewYear--
+				} else {
+					viewMonth--
+				}
+			case ']':
+				if viewMonth == time.December {
+					viewMonth = time.January
+					viewYear++
+				} else {
+					viewMonth++
+				}
+			case '(':
+				viewYear--
+			case ')':
+				viewYear++
+			case 't':
+				viewMonth = today.Month()
+				viewYear = today.Year()
 			}
-			case *tcell.EventResize:
-				    s.Sync()
+
+			// Only redraw if something actually changed
+			if viewMonth != prevMonth || viewYear != prevYear {
+				s.Clear()
+				render(s, today, viewMonth, viewYear)
+			}
+
+		case *tcell.EventResize:
+			s.Clear()
+			s.Sync()
+			render(s, today, viewMonth, viewYear)
 		}
 	}
-	
 }
 
-func drawText(s tcell.Screen, x, y int, style tcell.Style, text string){
-	originalX := x;
-
-	for _, letter := range text{
-		if(letter == '\n'){
-			y++;
-			x = originalX;
+func drawText(s tcell.Screen, x, y int, style tcell.Style, text string) {
+	originalX := x
+	for _, letter := range text {
+		if letter == '\n' {
+			y++
+			x = originalX
 			continue
 		}
-
 		s.SetContent(x, y, letter, nil, style)
-		x++;
+		x++
 	}
 }
