@@ -14,18 +14,36 @@ This calendar only allows navigation do not expect to add events or reminders, O
 
 - [Installation](#installation)
 - [Usage](#usage)
-- [License](#license)
+- [Customization](#customization)
 
 ## Installation
 
-Provide step-by-step instructions on how to install and set up your project.
+You can get it from yay AUR helper.
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/yourproject.git
+yay -S minical
+```
 
-# Change directory
-cd yourproject
+## Usage
 
-# Install dependencies
-npm install
+After installing simply type:
+```bash
+minical
+```
+
+Check available commands:
+```bash
+minical --help
+```
+
+Available commands:
+```bash
+minical --gen-config
+    Generates default config file
+minical --today
+    Returns current date in YYYY-MM-DD format
+```
+
+## Customization
+
+Even though there is not much to customize but basic color and symbol customization can be done in **~/.config/minical/config**
