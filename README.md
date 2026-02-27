@@ -18,10 +18,24 @@ This calendar only allows navigation do not expect to add events or reminders, O
 
 ## Installation
 
-You can get it from yay AUR helper.
+You can get it from your favorite AUR package helper:
 
+yay:
 ```bash
 yay -S minical
+```
+
+paru
+```bash
+paru -S minical
+```
+
+or do it manually
+
+```bash
+git clone https://aur.archlinux.org/minical.git
+cd minical
+makepkg -si
 ```
 
 ## Usage
