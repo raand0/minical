@@ -42,7 +42,7 @@ func render(s tcell.Screen, today time.Time, viewMonth time.Month, viewYear int)
 
 func renderHeader(s tcell.Screen, x, y int, month string, year int) {
 	borderStyle := tcell.StyleDefault.Foreground(configs.headerBoxColor)
-	titleStyle := tcell.StyleDefault.Foreground(configs.headerTextColor)
+	titleStyle := tcell.StyleDefault.Foreground(configs.headerTextColor).Bold(true)
 
 	title := fmt.Sprintf("%s %d", month, year)
 	width := configs.headerBoxWidth
@@ -100,14 +100,14 @@ outer:
 }
 
 func renderCalendar(s tcell.Screen, x, y int, today time.Time, viewMonth time.Month, viewYear int) {
-	weekDaysStyle := tcell.StyleDefault.Foreground(configs.weekDaysNameColor)
+	weekDaysStyle := tcell.StyleDefault.Foreground(configs.weekDaysNameColor).Dim(true)
 
 	highlightDay := 0
 	if viewYear == today.Year() && viewMonth == today.Month() {
 		highlightDay = today.Day()
 	}
 
-	currentDayStyle := tcell.StyleDefault.Foreground(configs.currentDayColor)
+	currentDayStyle := tcell.StyleDefault.Foreground(configs.currentDayColor).Bold(true)
 	passedDaysStyle := tcell.StyleDefault.Foreground(configs.passedDaysColor)
 	regularDaysStyle := tcell.StyleDefault.Foreground(configs.regularDaysColor)
 
