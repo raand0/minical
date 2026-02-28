@@ -61,3 +61,5 @@ minical --today
 ## Customization
 
 Even though there is not much to customize but basic color and symbol customization can be done in **~/.config/minical/config**
+
+Inspired By [lvsk-calendar](https://github.com/Gianluska/lvsk-calendar)
